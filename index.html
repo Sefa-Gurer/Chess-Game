@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+
+<!-- site dili tanımlaması -->
+<html lang="tr">
+
+<!-- Sayfa başlığı, formatı ve css dosyasının tanımlamaları -->
+<head>
+	<title>Satranç - İnternet Programlama Projesi</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="css/style.css">
+</head>
+
+<!-- js fonksiyonunun çağırılması -->
+<body onload="setup();">
+
+<h1>Meltem, Sefa, Açelya ve Beyza Satranç Projesi</h1>
+<p id="turnInfo">Hamle Sırası: <b>Beyaz</b></p>
+<section id="board">
+
+	<!-- terfi seçimi için gösterilecek mesaj penceresinin tanımlaması -->
+    <div class="overlay" id="terfi_mesaji">
+        <div class="overlay-inner">
+            <span class="overlay-title">Terfi İçin Taş Seç!</span>
+            <p class="overlay-text" id="uyari"></p>
+            <ul id="promotionList" class="white">
+                <li><a href="#" class="promotion-button queen" onclick="promote('queen');"></a></li>
+                <li><a href="#" class="promotion-button castle" onclick="promote('castle');"></a></li>
+                <li><a href="#" class="promotion-button bishop" onclick="promote('bishop');"></a></li>
+                <li><a href="#" class="promotion-button knight" onclick="promote('knight');"></a></li>
+            </ul>
+        </div>
+    </div>
+
+	<!-- hata mesajı penceresinin tanımlanması -->
+	<div class="overlay" id="uyari_mesaji">
+		<div class="overlay-inner">
+			<span class="overlay-title">Uyarı!</span>
+			<p class="overlay-text" id="errorText"></p>
+			<a href="#" class="overlay-button" onclick="closeError();">Close</a>
+		</div>
+	</div>
+</section>
+
+<!-- javascript dosyasının tanımlanması -->
+<script type="text/javascript" src="js/scripts.js"></script>
+
+</body>
+</html>
