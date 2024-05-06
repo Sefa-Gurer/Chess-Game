@@ -207,3 +207,45 @@ h1 {
     color: #333; /* Başlık metnin rengini belirler */
     font-family: Arial, sans-serif; /* Kullanılacak yazı tipini belirler */
 }
+
+/* eklemeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee */
+
+#board {
+    float: left; /* Tahtayı sola alır */
+}
+
+.captured-container {
+    width: 200px; /* Konteyner genişliği artırılır */
+    float: left; /* Sol tarafta yer alacak şekilde yaslanır */
+    margin-left: 20px; /* Tahta ile arasında 20px boşluk */
+    height: 642px; /* Tahta ile aynı yükseklik */
+    display: flex;
+    flex-direction: column; /* İçerikleri dikey sıralar */
+    background-color: #f0f0f0; /* Arka plan rengi */
+    border: 2px solid #dcdcdc; /* Dış kenarlık */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Hafif bir gölge ekler */
+}
+
+.captured {
+    flex-grow: 1; /* Esnek büyüme ile tüm alana yayılır */
+    padding: 10px; /* İçeride 10px dolgu */
+    overflow-y: auto; /* Taş sayısı arttığında kaydırmalı */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* İçerikleri merkezler */
+    align-items: center; /* İçerikleri dikey olarak ortalar */
+}
+
+.captured.white {
+    background-color: #ffffff; /* Beyaz taşlar için arka plan */
+}
+
+.captured.black {
+    background-color: #eeeeee; /* Siyah taşlar için arka plan */
+}
+
+.captured-piece {
+    background-size: 600% 200%; /* 6 sütun ve 2 satır için ayarlama */
+    width: 30px;  /* Küçük bir kutu boyutu */
+    height: 30px; /* Küçük bir kutu boyutu */
+}

@@ -74,7 +74,8 @@ let Piece = function(x, y, color, type){
 
 Piece.prototype.capture = function(){
 	this.captured = true;
-}
+    displayCapturedPiece(this);
+};
 
 let Castle = function(x, y, color){
 	this.color = color;
@@ -348,7 +349,7 @@ King.prototype.isValidMove = function(toSquare,n=1){
                                if(!kingExposed(currentPlayer.king)){
                                    currentPlayer.king.x= 6;
                                    currentPlayer.king.y= 8;
-                                   if( !kingExposed(currentPlayer.king)){  
+                                   if( !kingExposed(currentPlayer.king)){
                                        console.log("allow");
                                        result.valid=true;
                                        currentPlayer.kingMoved=true;
@@ -369,7 +370,7 @@ King.prototype.isValidMove = function(toSquare,n=1){
                                }
                            }
                        }
-                   } 
+                   }
                    else if(movementX==-2){
                        if(getSquare(1,Y).piece instanceof Castle){
                            if(getSquare(2,Y).piece==null&&getSquare(3,Y).piece==null&&getSquare(4,Y).piece==null){
@@ -379,7 +380,7 @@ King.prototype.isValidMove = function(toSquare,n=1){
                                if(!kingExposed(currentPlayer.king)){
                                    currentPlayer.king.x= 4;
                                    currentPlayer.king.y= Y;
-                                   if( !kingExposed(currentPlayer.king)){  
+                                   if( !kingExposed(currentPlayer.king)){
                                        console.log("allow");
                                        result.valid=true;
                                        currentPlayer.kingMoved=true;
@@ -453,7 +454,7 @@ Pawn.prototype.isValidMove = function(toSquare,n=1){
 			}else{
 				passantSquare = getSquare(this.x + movementX, this.y);
 				if(passantSquare.hasPiece() && passantSquare.piece.color != this.color && passantSquare.piece.type == "pawn" && passantSquare.piece.advancedtwo == turn -1){
-					result = {valid : true, capture : passantSquare}; 
+					result = {valid : true, capture : passantSquare};
 				}
 			}
 		}else if(movementX == 0 && !toSquare.hasPiece()){
@@ -513,7 +514,7 @@ let setup = function(){
     black.king = new King(5, 1, "black");
     pieces.push(white.king);
     pieces.push(black.king);
-    
+
 	pieces.push(new Castle(1, 1, "black"));
 	pieces.push(new Knight(2, 1, "black"));
 	pieces.push(new Bishop(3, 1, "black"));
@@ -567,10 +568,7 @@ let squareClicked = function(e){
 	let y = Number(this.getAttribute("data-y"));
 	let square = getSquare(x, y);
 	if(selectedSquare === null){
-		if(square.piece === null){
-			showError("There is no piece here!");
-		}else if(square.piece.color != currentPlayer.color){
-			showError("This is not your piece!");
+        if(square.piece.color != currentPlayer.color){
 		}else{
 			selectedSquare = getSquare(x, y);
 			selectedSquare.select();
@@ -621,7 +619,6 @@ let move = function(start, end){
         if(kingExposed(currentPlayer.king)){
             //if(!(piece instanceof King)){
                 console.log("exposed");
-                showError("That is an invalid move!");
                 end.unsetPiece();
                 piece.x = start.x;
                 piece.y = start.y;
@@ -664,9 +661,9 @@ let move = function(start, end){
                     return;
                 }
                 showError("Check")
-                
-            } 
-            
+
+            }
+
         }
         else
         {
@@ -682,13 +679,12 @@ let move = function(start, end){
                     return;
                 }
                 showError("Check")
-                
+
             }
-            
+
         }
         nextTurn();
 	}else{
-		showError("That is an invalid move!");
         piece.x = start.x;
         piece.y = start.y;
         start.setPiece(start.piece);
@@ -748,7 +744,7 @@ let isCheckmate = function(king){
                             pieces[kingId].x= oldsquare.x;
                             pieces[kingId].y= oldsquare.y;
                         }
-                        else console.log("not valid at " + (king.x+i),(king.y+j)); 
+                        else console.log("not valid at " + (king.x+i),(king.y+j));
                     }
                     else console.log("i==0,j==0");
                 }
@@ -756,7 +752,7 @@ let isCheckmate = function(king){
             }
             else console.log("xx");
         }
-    }   
+    }
     console.log("fine");
     //check if you can kill the attacking piece
     for(let i=0;i<pieces.length;i++){
@@ -962,7 +958,7 @@ let isCheckmate = function(king){
                         }
                         square.unsetPiece(pieces[i]);
                     }
-                }       
+                }
             }
             else console.log(pieces[i]);
         }
@@ -1023,7 +1019,7 @@ let promote = function(type){
                 showError("Check")
                 black.checked=true;
                 black.king.checkedBy = newPiece;
-            } 
+            }
         }
         else
         {
@@ -1088,4 +1084,51 @@ let nextTurn = function(){
 		currentPlayer = white;
         document.getElementById("turnInfo").innerHTML = "Hamle Sırası: <b>Beyaz</b>";
 	}
+}
+
+//eklemeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee//
+
+function displayCapturedPiece(piece) {
+    var capturedContainer = document.querySelector('.captured.' + piece.color);
+    var img = document.createElement('div');
+    img.className = 'captured-piece';
+    img.style.backgroundImage = 'url("../img/pieces.png")';
+    img.style.backgroundPosition = getBackgroundPosition(piece);
+    img.style.width = '80px'; // Gereksinimlerinize göre ayarlayın
+    img.style.height = '80px'; // Gereksinimlerinize göre ayarlayın
+    capturedContainer.appendChild(img);
+}
+
+// function getBackgroundPosition(piece) {
+//     // Bu fonksiyon, taş türlerini sprite resimdeki konumlarına eşler
+//     var positions = {
+//         'pawn': '100% 100%',
+//         'rook': '80% 100%',
+//         'knight': '60% 100%',
+//         'bishop': '40% 100%',
+//         'queen': '20% 100%',
+//         'king': '0% 100%'
+//     };
+
+//     if (piece.color === 'white') {
+//         for (var key in positions) {
+//             positions[key] = positions[key].replace('100%', '0%');
+//         }
+//     }
+
+//     return positions[piece.type];
+// }
+
+function getBackgroundPosition(piece) {
+    var indexMap = {
+        'pawn': 0,
+        'knight': 1,
+        'bishop': 2,
+        'rook': 3,
+        'queen': 4,
+        'king': 5
+    };
+    var x = (indexMap[piece.type] * -100) + '%'; // X pozisyonunu hesaplama
+    var y = piece.color === 'white' ? '0%' : '-100%'; // Y pozisyonunu hesaplama
+    return x+" "+y;
 }
