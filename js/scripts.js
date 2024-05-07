@@ -550,9 +550,34 @@ let setup = function(){
 	}
 };
 
-let showError = function(message){
-	document.getElementById("errorText").innerHTML = message;
-	document.getElementById("uyari_mesaji").className = "overlay show";
+// let showError = function(message){
+// 	document.getElementById("errorText").innerHTML = message;
+// 	document.getElementById("uyari_mesaji").className = "overlay show";
+// }
+
+let showError = function(message) {
+    var errorElement = document.getElementById("errorText");
+    errorElement.innerHTML = message;
+
+    var overlayElement = document.getElementById("uyari_mesaji");
+    overlayElement.className = "overlay show";
+
+    var closeButton = document.getElementsByClassName("overlay-button")[0]; // Close butonunu seç
+
+    // Eğer mesaj "checkmate" ise, bir buton ekleyin
+    if (message === "Checkmate") {
+        // var button = document.createElement("button"); // Buton elementi oluştur
+        // button.innerText = "Yeni Oyun"; // Butona basılacak yazı
+        closeButton.innerHTML = "Yeni Oyun"; // Özel durum için metni değiştir
+        closeButton.onclick = function() { // Butona tıklandığında çalışacak fonksiyon
+            overlayElement.className = "overlay"; // Overlay'i gizle
+            errorElement.innerHTML = ""; // Hata mesajını temizle
+            restartGame();
+        };
+
+        // Hata mesajı alanına butonu ekleyin
+        errorElement.appendChild(button);
+    }
 }
 
 let closeError = function(){
@@ -1099,36 +1124,20 @@ function displayCapturedPiece(piece) {
     capturedContainer.appendChild(img);
 }
 
-// function getBackgroundPosition(piece) {
-//     // Bu fonksiyon, taş türlerini sprite resimdeki konumlarına eşler
-//     var positions = {
-//         'pawn': '100% 100%',
-//         'rook': '80% 100%',
-//         'knight': '60% 100%',
-//         'bishop': '40% 100%',
-//         'queen': '20% 100%',
-//         'king': '0% 100%'
-//     };
-
-//     if (piece.color === 'white') {
-//         for (var key in positions) {
-//             positions[key] = positions[key].replace('100%', '0%');
-//         }
-//     }
-
-//     return positions[piece.type];
-// }
-
 function getBackgroundPosition(piece) {
+    // Sprite sırasına göre indexMap güncellemesi
     var indexMap = {
-        'pawn': 0,
-        'knight': 1,
-        'bishop': 2,
-        'rook': 3,
-        'queen': 4,
-        'king': 5
+        'queen': 1,  // Vezirin pozisyonu
+        'bishop': 2, // Filin pozisyonu
+        'knight': 3, // Atın pozisyonu
+        'castle': 4,   // Kalenin pozisyonu
+        'pawn': 5    // Piyonun pozisyonu
     };
-    var x = (indexMap[piece.type] * -100) + '%'; // X pozisyonunu hesaplama
-    var y = piece.color === 'white' ? '0%' : '-100%'; // Y pozisyonunu hesaplama
+    var x = (indexMap[piece.type] * -100) + '%'; // X pozisyonunu hesaplama, 6 sütun var
+    var y = piece.color === 'white' ? '0%' : '-100%'; // Y pozisyonunu hesaplama, 2 satır var
     return x+" "+y;
+}
+
+function restartGame() {
+    window.location.reload();
 }
