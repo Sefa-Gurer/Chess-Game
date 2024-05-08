@@ -1019,19 +1019,19 @@ let blackScore = 0;
 function updateScore(piece) {
     switch(piece.type){
         case "queen":
-            point = 9; // Siyah taş yendi, siyah skoru artır
+            point = 9; // Siyah vezir yendi
             break;
         case "castle":
-            point = 5; // Siyah taş yendi, siyah skoru artır
+            point = 5; // Siyah kale yendi
             break;
         case "bishop":
-            point = 3; // Siyah taş yendi, siyah skoru artır
+            point = 3; // Siyah fil yendi
             break;
         case "knight":
-            point = 3; // Siyah taş yendi, siyah skoru artır
+            point = 3; // Siyah at yendi
             break;
         case "pawn":
-            point = 1; // Siyah taş yendi, siyah skoru artır
+            point = 1; // Siyah piyon yendi
             break;
     }
     if (piece.color === 'white') {
