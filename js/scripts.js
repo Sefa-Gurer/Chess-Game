@@ -986,7 +986,7 @@ function displayCapturedPiece(piece) {
     var capturedContainer = document.querySelector('.captured.' + piece.color);
     var img = document.createElement('div');
     img.className = 'captured-piece';
-    img.style.backgroundImage = 'url("../img/pieces.png")';
+    img.style.backgroundImage = 'url("../pieces.png")';
     img.style.backgroundPosition = getBackgroundPosition(piece);
     img.style.width = '80px'; // Gereksinimlerinize göre ayarlayın
     img.style.height = '80px'; // Gereksinimlerinize göre ayarlayın

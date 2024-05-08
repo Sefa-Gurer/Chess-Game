@@ -16,7 +16,7 @@ html, body{
 }
 
 #board .square{
-	background-image:url("../img/pieces.png");
+	background-image:url("../pieces.png");
 	background-size:600% 200%;
 	width:80px;
 	height:80px;
@@ -158,7 +158,7 @@ html, body{
 }
 
 #board #promotionList li a{
-	background-image:url("../img/pieces.png");
+	background-image:url("../pieces.png");
 	background-size:600% 200%;
 	width:60px;
 	height:60px;
