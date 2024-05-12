@@ -1,775 +1,774 @@
 // jshint browser: false
-let pieces = [];
-let boardSquares = [];
-let selectedSquare = null;
-let Player = function(color){
-    this.checked = false;
-	this.color = color;
-	this.castled = false;
-    this.king = null;
-    this.kingMoved = false;
-    this.promote = null;
-    this.moved = null;}
-let turn = 1;
-let white = new Player("white")
-let black = new Player("black")
-let currentPlayer = white;
-let SquareObject = function(x, y, color, selected, element, piece){
+let taslar = [];
+let tahtanin_hücreleri = [];
+let secilen_hucre = null;
+let Oyuncu = function(renk){
+    this.sah_cekme = false;
+	this.renk = renk;
+    this.sah = null;
+    this.sahHareketi = false;
+    this.terfi = null;
+    this.hareket = null;}
+let sira = 1;
+let beyaz = new Oyuncu("beyaz")
+let siyah = new Oyuncu("siyah")
+let aktifOyuncu = beyaz;
+let HucreNesnesi = function(x, y, renk, secim, element, tas){
 	this.x = x;
 	this.y = y;
-	this.color = color;
-	this.selected = selected;
+	this.renk = renk;
+	this.secim = secim;
 	this.element = element;
-	this.piece = piece;}
+	this.tas = tas;}
 
-SquareObject.prototype.setPiece = function(piece){
-	this.piece = piece;
-	this.update()}
+HucreNesnesi.prototype.tasAta = function(tas){
+	this.tas = tas;
+	this.guncelle()}
 
-SquareObject.prototype.unsetPiece = function(){
-	this.piece = null;
-	this.update();}
+HucreNesnesi.prototype.tasKaldir = function(){
+	this.tas = null;
+	this.guncelle();}
 
-SquareObject.prototype.update = function(){
-	this.element.className = "square " + this.color + " " + (this.selected ? "selected" : "") + " " + (this.piece === null ? "empty" : this.piece.color + "-" + this.piece.type);}
+HucreNesnesi.prototype.guncelle = function(){
+	this.element.className = "hucre " + this.renk + " " + (this.secim ? "secim" : "") + " " + (this.tas === null ? "bos" : this.tas.renk + "-" + this.tas.type);}
 
-SquareObject.prototype.select = function(){
-	this.selected = true;
-	this.update();}
+HucreNesnesi.prototype.sec = function(){
+	this.secim = true;
+	this.guncelle();}
 
-SquareObject.prototype.deselect = function(){
-	this.selected = false;
-	this.update();}
+HucreNesnesi.prototype.secimikaldir = function(){
+	this.secim = false;
+	this.guncelle();}
 
-SquareObject.prototype.hasPiece = function(){
-	return this.piece !== null;}
+HucreNesnesi.prototype.hucreDolulugu = function(){
+	return this.tas !== null;}
 
-let Piece = function(x, y, color, type){
-	this.color = color;
+let Tas = function(x, y, renk, type){
+	this.renk = renk;
 	this.type = type;
 	this.x = x;
 	this.y = y;
-	this.captured = false;
-    this.lastmoved = 0;
-    this.advancedtwo = 0;}
-Piece.prototype.capture = function(){
-	this.captured = true;
-    displayCapturedPiece(this);}
+	this.alinan_tas = false;
+    this.sonhareket = 0;
+    this.ikiileri = 0;}
+Tas.prototype.alma = function(){
+	this.alinan_tas = true;
+    alinanTasinGosterimi(this);}
 
-let Castle = function(x, y, color){
-	this.color = color;
-	this.type = "castle";
+let Kale = function(x, y, renk){
+	this.renk = renk;
+	this.type = "kale";
 	this.x = x;
 	this.y = y;}
-Castle.prototype = new Piece();
+Kale.prototype = new Tas();
 
-Castle.prototype.isValidMove = function(toSquare,n=1){
-    if(n==0) return {valid:false, capture:null};
-	let movementY = (toSquare.y-this.y);
-	let movementX = (toSquare.x-this.x);
-	let directionX = movementX ? (movementX / Math.abs(movementX)) : 0;
-	let directionY = movementY ? (movementY / Math.abs(movementY)) : 0;
-	let result = {valid : false, capture : null};
-	if(movementX == 0 || movementY == 0){
-		let blocked = false;
-		for(let testX = this.x+directionX, testY = this.y+directionY; testX != toSquare.x || testY != toSquare.y; testX += directionX, testY += directionY){
-			testSquare = getSquare(testX, testY);
-			blocked = blocked || testSquare.hasPiece();}
-		if(!blocked){
-			if(!toSquare.hasPiece()){
-				result = {valid : true, capture : null};
-			}else if(toSquare.hasPiece() && toSquare.piece.color != this.color){
-				result = {valid : true, capture : toSquare};}}}
+Kale.prototype.hareketKurallari = function(hedefHucre,n=1){
+    if(n==0) return {gecerli:false, alma:null};
+	let hareketY = (hedefHucre.y-this.y);
+	let hareketX = (hedefHucre.x-this.x);
+	let yonX = hareketX ? (hareketX / Math.abs(hareketX)) : 0;
+	let yonY = hareketY ? (hareketY / Math.abs(hareketY)) : 0;
+	let sonuc = {gecerli : false, alma : null};
+	if(hareketX == 0 || hareketY == 0){
+		let engellenmis = false;
+		for(let testX = this.x+yonX, testY = this.y+yonY; testX != hedefHucre.x || testY != hedefHucre.y; testX += yonX, testY += yonY){
+			hucreKontrol = hucreGetir(testX, testY);
+			engellenmis = engellenmis || hucreKontrol.hucreDolulugu();}
+		if(!engellenmis){
+			if(!hedefHucre.hucreDolulugu()){
+				sonuc = {gecerli : true, alma : null};
+			}else if(hedefHucre.hucreDolulugu() && hedefHucre.tas.renk != this.renk){
+				sonuc = {gecerli : true, alma : hedefHucre};}}}
     if(n==2) {
-        for(let i=0;i<pieces.length;i++){
-            if(pieces[i].color != currentPlayer.color){
-                if(pieces[i].captured==true) continue;
-                if(pieces[i].isValidMove(getSquare(currentPlayer.king.x, currentPlayer.king.y),n-1).valid){
-                    result.valid = false;
+        for(let i=0;i<taslar.length;i++){
+            if(taslar[i].renk != aktifOyuncu.renk){
+                if(taslar[i].alinan_tas==true) continue;
+                if(taslar[i].hareketKurallari(hucreGetir(aktifOyuncu.sah.x, aktifOyuncu.sah.y),n-1).gecerli){
+                    sonuc.gecerli = false;
                     break;}}}}
-	return result;}
+	return sonuc;}
 
-let Knight = function(x, y, color){
-	this.color = color;
-	this.type = "knight";
+let At = function(x, y, renk){
+	this.renk = renk;
+	this.type = "at";
 	this.x = x;
 	this.y = y;}
-Knight.prototype = new Piece();
+At.prototype = new Tas();
 
-Knight.prototype.isValidMove = function(toSquare,n=1){
-    if(n==0) return {valid:false, capture:null};
-	let movementY = toSquare.y-this.y;
-	let movementX = toSquare.x-this.x;
-	let result = {valid : false, capture : null};
-	if((Math.abs(movementX) == 2 && Math.abs(movementY) == 1) || (Math.abs(movementX) == 1 && Math.abs(movementY) == 2)){
-		if(!toSquare.hasPiece()){
-			result = {valid : true, capture : null};
-		}else if(toSquare.hasPiece() && toSquare.piece.color != this.color){
-			result = {valid : true, capture : toSquare};}}
+At.prototype.hareketKurallari = function(hedefHucre,n=1){
+    if(n==0) return {gecerli:false, alma:null};
+	let hareketY = hedefHucre.y-this.y;
+	let hareketX = hedefHucre.x-this.x;
+	let sonuc = {gecerli : false, alma : null};
+	if((Math.abs(hareketX) == 2 && Math.abs(hareketY) == 1) || (Math.abs(hareketX) == 1 && Math.abs(hareketY) == 2)){
+		if(!hedefHucre.hucreDolulugu()){
+			sonuc = {gecerli : true, alma : null};
+		}else if(hedefHucre.hucreDolulugu() && hedefHucre.tas.renk != this.renk){
+			sonuc = {gecerli : true, alma : hedefHucre};}}
     if(n==2) {
-        for(let i=0;i<pieces.length;i++){
-            if(pieces[i].color != currentPlayer.color){
-                if(pieces[i].captured==true) continue;
-                if(pieces[i].isValidMove(getSquare(currentPlayer.king.x, currentPlayer.king.y),n-1).valid){
-                    result.valid = false;
+        for(let i=0;i<taslar.length;i++){
+            if(taslar[i].renk != aktifOyuncu.renk){
+                if(taslar[i].alinan_tas==true) continue;
+                if(taslar[i].hareketKurallari(hucreGetir(aktifOyuncu.sah.x, aktifOyuncu.sah.y),n-1).gecerli){
+                    sonuc.gecerli = false;
                     break;}}}}
-	return result;}
+	return sonuc;}
 
-let Bishop = function(x, y, color){
-	this.color = color;
-	this.type = "bishop";
+let Fil = function(x, y, renk){
+	this.renk = renk;
+	this.type = "fil";
 	this.x = x;
 	this.y = y;}
-Bishop.prototype = new Piece();
+Fil.prototype = new Tas();
 
-Bishop.prototype.isValidMove = function(toSquare,n=1){
-    if(n==0) return {valid:false, capture:null};
-	let movementY = (toSquare.y-this.y);
-	let movementX = (toSquare.x-this.x);
-	let directionX = movementX ? (movementX / Math.abs(movementX)) : 0;
-	let directionY = movementY ? (movementY / Math.abs(movementY)) : 0;
-	let result = {valid : false, capture : null};
-	if(Math.abs(movementX) == Math.abs(movementY)){
-		let blocked = false;
-		for(let testX = this.x+directionX, testY = this.y+directionY; testX != toSquare.x || testY != toSquare.y; testX += directionX, testY += directionY){
-			testSquare = getSquare(testX, testY);
-			blocked = blocked || testSquare.hasPiece();}
-		if(!blocked){
-			if(!toSquare.hasPiece()){
-				result = {valid : true, capture : null};
-			}else if(toSquare.hasPiece() && toSquare.piece.color != this.color){
-				result = {valid : true, capture : toSquare};}}}
+Fil.prototype.hareketKurallari = function(hedefHucre,n=1){
+    if(n==0) return {gecerli:false, alma:null};
+	let hareketY = (hedefHucre.y-this.y);
+	let hareketX = (hedefHucre.x-this.x);
+	let yonX = hareketX ? (hareketX / Math.abs(hareketX)) : 0;
+	let yonY = hareketY ? (hareketY / Math.abs(hareketY)) : 0;
+	let sonuc = {gecerli : false, alma : null};
+	if(Math.abs(hareketX) == Math.abs(hareketY)){
+		let engellenmis = false;
+		for(let testX = this.x+yonX, testY = this.y+yonY; testX != hedefHucre.x || testY != hedefHucre.y; testX += yonX, testY += yonY){
+			hucreKontrol = hucreGetir(testX, testY);
+			engellenmis = engellenmis || hucreKontrol.hucreDolulugu();}
+		if(!engellenmis){
+			if(!hedefHucre.hucreDolulugu()){
+				sonuc = {gecerli : true, alma : null};
+			}else if(hedefHucre.hucreDolulugu() && hedefHucre.tas.renk != this.renk){
+				sonuc = {gecerli : true, alma : hedefHucre};}}}
     if(n==2) {
-        for(let i=0;i<pieces.length;i++){
-            if(pieces[i].color != currentPlayer.color){
-                if(pieces[i].captured==true) continue;
-                if(pieces[i].isValidMove(getSquare(currentPlayer.king.x, currentPlayer.king.y),n-1).valid){
-                    result.valid = false;
+        for(let i=0;i<taslar.length;i++){
+            if(taslar[i].renk != aktifOyuncu.renk){
+                if(taslar[i].alinan_tas==true) continue;
+                if(taslar[i].hareketKurallari(hucreGetir(aktifOyuncu.sah.x, aktifOyuncu.sah.y),n-1).gecerli){
+                    sonuc.gecerli = false;
                     break;}}}}
-	return result;}
+	return sonuc;}
 
-let Queen = function(x, y, color){
-	this.color = color;
-	this.type = "queen";
+let Vezir = function(x, y, renk){
+	this.renk = renk;
+	this.type = "vezir";
 	this.x = x;
 	this.y = y;}
-Queen.prototype = new Piece();
+Vezir.prototype = new Tas();
 
-Queen.prototype.isValidMove = function(toSquare,n=1){
-    if(n==0) return {valid:false, capture:null};
-	let movementY = (toSquare.y-this.y);
-	let movementX = (toSquare.x-this.x);
-	let directionX = movementX ? (movementX / Math.abs(movementX)) : 0;
-	let directionY = movementY ? (movementY / Math.abs(movementY)) : 0;
-	let result = {valid : false, capture : null};
-	if(Math.abs(movementX) == Math.abs(movementY) || movementX == 0 || movementY == 0){
-		let blocked = false;
-		for(let testX = this.x+directionX, testY = this.y+directionY; testX != toSquare.x || testY != toSquare.y; testX += directionX, testY += directionY){
-			testSquare = getSquare(testX, testY);
-			blocked = blocked || testSquare.hasPiece();}
-		if(!blocked){
-			if(!toSquare.hasPiece()){
-				result = {valid : true, capture : null};
-			}else if(toSquare.hasPiece() && toSquare.piece.color != this.color){
-				result = {valid : true, capture : toSquare};}}}
+Vezir.prototype.hareketKurallari = function(hedefHucre,n=1){
+    if(n==0) return {gecerli:false, alma:null};
+	let hareketY = (hedefHucre.y-this.y);
+	let hareketX = (hedefHucre.x-this.x);
+	let yonX = hareketX ? (hareketX / Math.abs(hareketX)) : 0;
+	let yonY = hareketY ? (hareketY / Math.abs(hareketY)) : 0;
+	let sonuc = {gecerli : false, alma : null};
+	if(Math.abs(hareketX) == Math.abs(hareketY) || hareketX == 0 || hareketY == 0){
+		let engellenmis = false;
+		for(let testX = this.x+yonX, testY = this.y+yonY; testX != hedefHucre.x || testY != hedefHucre.y; testX += yonX, testY += yonY){
+			hucreKontrol = hucreGetir(testX, testY);
+			engellenmis = engellenmis || hucreKontrol.hucreDolulugu();}
+		if(!engellenmis){
+			if(!hedefHucre.hucreDolulugu()){
+				sonuc = {gecerli : true, alma : null};
+			}else if(hedefHucre.hucreDolulugu() && hedefHucre.tas.renk != this.renk){
+				sonuc = {gecerli : true, alma : hedefHucre};}}}
     if(n==2) {
-        for(let i=0;i<pieces.length;i++){
-            if(pieces[i].color != currentPlayer.color){
-                if(pieces[i].captured==true) continue;
-                if(pieces[i].isValidMove(getSquare(currentPlayer.king.x, currentPlayer.king.y),n-1).valid){
-                    result.valid = false;
+        for(let i=0;i<taslar.length;i++){
+            if(taslar[i].renk != aktifOyuncu.renk){
+                if(taslar[i].alinan_tas==true) continue;
+                if(taslar[i].hareketKurallari(hucreGetir(aktifOyuncu.sah.x, aktifOyuncu.sah.y),n-1).gecerli){
+                    sonuc.gecerli = false;
                     break;}}}}
-	return result;}
+	return sonuc;}
 
-let King = function(x, y, color){
-	this.color = color;
-	this.type = "king";
+let Sah = function(x, y, renk){
+	this.renk = renk;
+	this.type = "sah";
 	this.x = x;
 	this.y = y;
-    this.checkedBy=null;}
-King.prototype = new Piece();
+    this.tehtidEdenTas=null;}
+Sah.prototype = new Tas();
 
-King.prototype.isValidMove = function(toSquare,n=1){
-    if(n==0) return {valid:false, capture:null};
-	let movementY = toSquare.y-this.y;
-	let movementX = toSquare.x-this.x;
-	let result = {valid : false, capture : null};
-	if((movementX >= -1 && movementX <= 1 && movementY >= -1 && movementY <= 1)){
-        if(!toSquare.hasPiece()){
-			result = {valid : true, capture : null};
-		}else if(toSquare.hasPiece() && toSquare.piece.color != this.color){
-			result = {valid : true, capture : toSquare};}
-        oldPiece = toSquare.piece;
-        toSquare.unsetPiece();
-        for(let i=0;i<pieces.length;i++){
-            let square = getSquare(pieces[i].x, pieces[i].y);
-            if(square.piece != null && pieces[i].captured==false){
-                if(pieces[i].color != currentPlayer.color){
-                    if(pieces[i] instanceof Pawn){
-                        let direction = pieces[i].color == "white" ? -1 : 1;
-                        let movementY = (toSquare.y-pieces[i].y);
-                        let movementX = (toSquare.x-pieces[i].x);
-                        if(movementY == direction){
-                            if(Math.abs(movementX) == 1 && Math.abs(movementY) == 1){
-                                if(this.color != pieces[i].color){
-                                    result.valid= false;
-                                    toSquare.setPiece(oldPiece);
+Sah.prototype.hareketKurallari = function(hedefHucre,n=1){
+    if(n==0) return {gecerli:false, alma:null};
+	let hareketY = hedefHucre.y-this.y;
+	let hareketX = hedefHucre.x-this.x;
+	let sonuc = {gecerli : false, alma : null};
+	if((hareketX >= -1 && hareketX <= 1 && hareketY >= -1 && hareketY <= 1)){
+        if(!hedefHucre.hucreDolulugu()){
+			sonuc = {gecerli : true, alma : null};
+		}else if(hedefHucre.hucreDolulugu() && hedefHucre.tas.renk != this.renk){
+			sonuc = {gecerli : true, alma : hedefHucre};}
+        oncekiTas = hedefHucre.tas;
+        hedefHucre.tasKaldir();
+        for(let i=0;i<taslar.length;i++){
+            let hucre = hucreGetir(taslar[i].x, taslar[i].y);
+            if(hucre.tas != null && taslar[i].alinan_tas==false){
+                if(taslar[i].renk != aktifOyuncu.renk){
+                    if(taslar[i] instanceof Piyon){
+                        let direction = taslar[i].renk == "beyaz" ? -1 : 1;
+                        let hareketY = (hedefHucre.y-taslar[i].y);
+                        let hareketX = (hedefHucre.x-taslar[i].x);
+                        if(hareketY == direction){
+                            if(Math.abs(hareketX) == 1 && Math.abs(hareketY) == 1){
+                                if(this.renk != taslar[i].renk){
+                                    sonuc.gecerli= false;
+                                    hedefHucre.tasAta(oncekiTas);
                                     break;}}}}
-                    else if(pieces[i] instanceof King){
-                        if(this.color == "white"){
-                            if(Math.abs(black.king.x-toSquare.x) <= 1 && Math.abs(black.king.y-toSquare.y) <= 1){
-                                result.valid = false;
-                                toSquare.setPiece(oldPiece);
-                                return result;}
+                    else if(taslar[i] instanceof Sah){
+                        if(this.renk == "beyaz"){
+                            if(Math.abs(siyah.sah.x-hedefHucre.x) <= 1 && Math.abs(siyah.sah.y-hedefHucre.y) <= 1){
+                                sonuc.gecerli = false;
+                                hedefHucre.tasAta(oncekiTas);
+                                return sonuc;}
                         }else{
-                            if(Math.abs(white.king.x-toSquare.x) <= 1 && Math.abs(white.king.y-toSquare.y) <= 1){
-                                result.valid = false;
-                                toSquare.setPiece(oldPiece);
-                                return result;}}}
+                            if(Math.abs(beyaz.sah.x-hedefHucre.x) <= 1 && Math.abs(beyaz.sah.y-hedefHucre.y) <= 1){
+                                sonuc.gecerli = false;
+                                hedefHucre.tasAta(oncekiTas);
+                                return sonuc;}}}
                     else {
-                        if(pieces[i].isValidMove(getSquare(toSquare.x, toSquare.y)).valid){
-                            result.valid = false;
-                            toSquare.setPiece(oldPiece);
-                            return result;}}}}}
-        toSquare.setPiece(oldPiece);}
-    else if(currentPlayer.moved==currentPlayer.king){
-        if(currentPlayer.kingMoved ==false){
-            Y = currentPlayer==white?8:1;
-            if(currentPlayer.king.x==5&&currentPlayer.king.y==Y){
-                if(currentPlayer.checked==false){
-                   if(movementX==2){
-                       if(getSquare(8,Y).piece instanceof Castle){
-                           if(getSquare(7,Y).piece==null&&getSquare(6,Y).piece==null){
-                               currentPlayer.kingMoved=true;
-                               currentPlayer.king.x= 7;
-                               currentPlayer.king.y= Y;
-                               if(!kingExposed(currentPlayer.king)){
-                                   currentPlayer.king.x= 6;
-                                   currentPlayer.king.y= 8;
-                                   if( !kingExposed(currentPlayer.king)){
-                                       result.valid=true;
-                                       currentPlayer.kingMoved=true;
-                                       let rook = getSquare(8,Y).piece;
-                                       getSquare(8,Y).unsetPiece();
-                                       getSquare(6,Y).setPiece(rook);
+                        if(taslar[i].hareketKurallari(hucreGetir(hedefHucre.x, hedefHucre.y)).gecerli){
+                            sonuc.gecerli = false;
+                            hedefHucre.tasAta(oncekiTas);
+                            return sonuc;}}}}}
+        hedefHucre.tasAta(oncekiTas);}
+    else if(aktifOyuncu.hareket==aktifOyuncu.sah){
+        if(aktifOyuncu.sahHareketi ==false){
+            Y = aktifOyuncu==beyaz?8:1;
+            if(aktifOyuncu.sah.x==5&&aktifOyuncu.sah.y==Y){
+                if(aktifOyuncu.sah_cekme==false){
+                   if(hareketX==2){
+                       if(hucreGetir(8,Y).tas instanceof Kale){
+                           if(hucreGetir(7,Y).tas==null&&hucreGetir(6,Y).tas==null){
+                               aktifOyuncu.sahHareketi=true;
+                               aktifOyuncu.sah.x= 7;
+                               aktifOyuncu.sah.y= Y;
+                               if(!kingExposed(aktifOyuncu.sah)){
+                                   aktifOyuncu.sah.x= 6;
+                                   aktifOyuncu.sah.y= 8;
+                                   if( !kingExposed(aktifOyuncu.sah)){
+                                       sonuc.gecerli=true;
+                                       aktifOyuncu.sahHareketi=true;
+                                       let rook = hucreGetir(8,Y).tas;
+                                       hucreGetir(8,Y).tasKaldir();
+                                       hucreGetir(6,Y).tasAta(rook);
                                        rook.x = 6;
                                        rook.y = Y;}
                                    else {
-                                       currentPlayer.kingMoved=false;}}
+                                       aktifOyuncu.sahHareketi=false;}}
                                else {
-                                   currentPlayer.kingMoved=false;}}}}
-                   else if(movementX==-2){
-                       if(getSquare(1,Y).piece instanceof Castle){
-                           if(getSquare(2,Y).piece==null&&getSquare(3,Y).piece==null&&getSquare(4,Y).piece==null){
-                               currentPlayer.kingMoved=true;
-                               currentPlayer.king.x= 3;
-                               currentPlayer.king.y= Y;
-                               if(!kingExposed(currentPlayer.king)){
-                                   currentPlayer.king.x= 4;
-                                   currentPlayer.king.y= Y;
-                                   if( !kingExposed(currentPlayer.king)){
-                                       result.valid=true;
-                                       currentPlayer.kingMoved=true;
-                                       let rook = getSquare(1,Y).piece;
-                                       getSquare(1,Y).unsetPiece();
-                                       getSquare(4,Y).setPiece(rook);
+                                   aktifOyuncu.sahHareketi=false;}}}}
+                   else if(hareketX==-2){
+                       if(hucreGetir(1,Y).tas instanceof Kale){
+                           if(hucreGetir(2,Y).tas==null&&hucreGetir(3,Y).tas==null&&hucreGetir(4,Y).tas==null){
+                               aktifOyuncu.sahHareketi=true;
+                               aktifOyuncu.sah.x= 3;
+                               aktifOyuncu.sah.y= Y;
+                               if(!kingExposed(aktifOyuncu.sah)){
+                                   aktifOyuncu.sah.x= 4;
+                                   aktifOyuncu.sah.y= Y;
+                                   if( !kingExposed(aktifOyuncu.sah)){
+                                       sonuc.gecerli=true;
+                                       aktifOyuncu.sahHareketi=true;
+                                       let rook = hucreGetir(1,Y).tas;
+                                       hucreGetir(1,Y).tasKaldir();
+                                       hucreGetir(4,Y).tasAta(rook);
                                        rook.x = 4;
                                        rook.y = Y;}
                                    else {
-                                       currentPlayer.kingMoved=false;}}
+                                       aktifOyuncu.sahHareketi=false;}}
                                else {
-                                   currentPlayer.kingMoved=false;}}}}}}}}
-    if(n==2&&currentPlayer.checked==false) {
-        for(let i=0;i<pieces.length;i++){
-            if(pieces[i].color != currentPlayer.color){
-                if(pieces[i].captured==true) continue;
-                if(pieces[i].isValidMove(getSquare(currentPlayer.king.x, currentPlayer.king.y),n-1).valid){
-                    result.valid = false;
+                                   aktifOyuncu.sahHareketi=false;}}}}}}}}
+    if(n==2&&aktifOyuncu.sah_cekme==false) {
+        for(let i=0;i<taslar.length;i++){
+            if(taslar[i].renk != aktifOyuncu.renk){
+                if(taslar[i].alinan_tas==true) continue;
+                if(taslar[i].hareketKurallari(hucreGetir(aktifOyuncu.sah.x, aktifOyuncu.sah.y),n-1).gecerli){
+                    sonuc.gecerli = false;
                     break;}}}}
-    if(result.valid&&currentPlayer.kingMoved==false){
-           currentPlayer.kingMoved=true;}
-	return result;}
+    if(sonuc.gecerli&&aktifOyuncu.sahHareketi==false){
+           aktifOyuncu.sahHareketi=true;}
+	return sonuc;}
 
-let Pawn = function(x, y, color){
-	this.color = color;
-	this.type = "pawn";
+let Piyon = function(x, y, renk){
+	this.renk = renk;
+	this.type = "piyon";
 	this.x = x;
 	this.y = y;}
-Pawn.prototype = new Piece();
+Piyon.prototype = new Tas();
 
-Pawn.prototype.isValidMove = function(toSquare,n=1){
-    if(n==0) return {valid:false, capture:null};
-	let movementY = (toSquare.y-this.y);
-	let movementX = (toSquare.x-this.x);
-	let direction = this.color == "white" ? -1 : 1;
-	let result = {valid : false, capture : null};
-	if(movementY == direction * 2 && movementX == 0 && this.y == (this.color == "white" ? 7 : 2) && !getSquare(this.x, this.y+direction).hasPiece() && !toSquare.hasPiece()){
-		result = {valid : true, capture : null};
-    this.advancedtwo = turn;
-	}else if(movementY == direction){
-		if(Math.abs(movementX) == 1){
-			if(toSquare.hasPiece() && toSquare.piece.color != this.color){
-				result = {valid : true, capture : toSquare};}
-		}else if(movementX == 0 && !toSquare.hasPiece()){
-			result = {valid : true, capture : null}}}
-    if(currentPlayer==white){
-        if(toSquare.y==1&&this.y==2){
-            if(result.capture!=null&&Math.abs(movementX)==1||result.capture==null&&Math.abs(movementX)==0&&!toSquare.hasPiece()){
-                result.valid=true;
-                result.promote=true;}}}
-    else if(currentPlayer==black){
-        if(toSquare.y==8&&this.y==7){
-            if(result.capture!=null&&Math.abs(movementX)==1||result.capture==null&&Math.abs(movementX)==0&&!toSquare.hasPiece()){
-                result.valid=true;
-                result.promote=true;}}}
+Piyon.prototype.hareketKurallari = function(hedefHucre,n=1){
+    if(n==0) return {gecerli:false, alma:null};
+	let hareketY = (hedefHucre.y-this.y);
+	let hareketX = (hedefHucre.x-this.x);
+	let direction = this.renk == "beyaz" ? -1 : 1;
+	let sonuc = {gecerli : false, alma : null};
+	if(hareketY == direction * 2 && hareketX == 0 && this.y == (this.renk == "beyaz" ? 7 : 2) && !hucreGetir(this.x, this.y+direction).hucreDolulugu() && !hedefHucre.hucreDolulugu()){
+		sonuc = {gecerli : true, alma : null};
+    this.ikiileri = sira;
+	}else if(hareketY == direction){
+		if(Math.abs(hareketX) == 1){
+			if(hedefHucre.hucreDolulugu() && hedefHucre.tas.renk != this.renk){
+				sonuc = {gecerli : true, alma : hedefHucre};}
+		}else if(hareketX == 0 && !hedefHucre.hucreDolulugu()){
+			sonuc = {gecerli : true, alma : null}}}
+    if(aktifOyuncu==beyaz){
+        if(hedefHucre.y==1&&this.y==2){
+            if(sonuc.alma!=null&&Math.abs(hareketX)==1||sonuc.alma==null&&Math.abs(hareketX)==0&&!hedefHucre.hucreDolulugu()){
+                sonuc.gecerli=true;
+                sonuc.terfi=true;}}}
+    else if(aktifOyuncu==siyah){
+        if(hedefHucre.y==8&&this.y==7){
+            if(sonuc.alma!=null&&Math.abs(hareketX)==1||sonuc.alma==null&&Math.abs(hareketX)==0&&!hedefHucre.hucreDolulugu()){
+                sonuc.gecerli=true;
+                sonuc.terfi=true;}}}
     if(n==2) {
-        for(let i=0;i<pieces.length;i++){
-            if(pieces[i].color != currentPlayer.color){
-                if(pieces[i].captured==true) continue;
-                if(pieces[i].isValidMove(getSquare(currentPlayer.king.x, currentPlayer.king.y),n-1).valid){
-                    result.valid = false;
+        for(let i=0;i<taslar.length;i++){
+            if(taslar[i].renk != aktifOyuncu.renk){
+                if(taslar[i].alinan_tas==true) continue;
+                if(taslar[i].hareketKurallari(hucreGetir(aktifOyuncu.sah.x, aktifOyuncu.sah.y),n-1).gecerli){
+                    sonuc.gecerli = false;
                     break;}}}}
-	return result;}
+	return sonuc;}
 
-let setup = function(){
+let run = function(){
 	let boardContainer = document.getElementById("board");
 	for(let i = 1; i <= 8; i++){
 		for (let j = 1; j <= 8; j++){
 			let squareElement = document.createElement("div");
-			let color = (j+i) % 2 ? "dark" : "light";
-			squareElement.addEventListener("click", squareClicked);
+			let renk = (j+i) % 2 ? "siyah_hucre" : "beyaz_hucre";
+			squareElement.addEventListener("click", hucreTiklama);
 			squareElement.setAttribute("data-x", j);
 			squareElement.setAttribute("data-y", i);
-			let square = new SquareObject(j, i, color, false, squareElement, null);
-			square.update();
-			boardSquares.push(square);
+			let hucre = new HucreNesnesi(j, i, renk, false, squareElement, null);
+			hucre.guncelle();
+			tahtanin_hücreleri.push(hucre);
 			boardContainer.appendChild(squareElement);}}
 
-    white.king = new King(5, 8, "white");
-    black.king = new King(5, 1, "black");
-    pieces.push(white.king);
-    pieces.push(black.king);
-	pieces.push(new Castle(1, 1, "black"));
-	pieces.push(new Knight(2, 1, "black"));
-	pieces.push(new Bishop(3, 1, "black"));
-	pieces.push(new Queen(4, 1, "black"));
-	pieces.push(new Bishop(6, 1, "black"));
-	pieces.push(new Knight(7, 1, "black"));
-	pieces.push(new Castle(8, 1, "black"));
-	pieces.push(new Castle(1, 8, "white"));
-	pieces.push(new Knight(2, 8, "white"));
-	pieces.push(new Bishop(3, 8, "white"));
-	pieces.push(new Queen(4, 8, "white"));
-	pieces.push(new Bishop(6, 8, "white"));
-	pieces.push(new Knight(7, 8, "white"));
-	pieces.push(new Castle(8, 8, "white"));
+    beyaz.sah = new Sah(5, 8, "beyaz");
+    siyah.sah = new Sah(5, 1, "siyah");
+    taslar.push(beyaz.sah);
+    taslar.push(siyah.sah);
+	taslar.push(new Kale(1, 1, "siyah"));
+	taslar.push(new At(2, 1, "siyah"));
+	taslar.push(new Fil(3, 1, "siyah"));
+	taslar.push(new Vezir(4, 1, "siyah"));
+	taslar.push(new Fil(6, 1, "siyah"));
+	taslar.push(new At(7, 1, "siyah"));
+	taslar.push(new Kale(8, 1, "siyah"));
+	taslar.push(new Kale(1, 8, "beyaz"));
+	taslar.push(new At(2, 8, "beyaz"));
+	taslar.push(new Fil(3, 8, "beyaz"));
+	taslar.push(new Vezir(4, 8, "beyaz"));
+	taslar.push(new Fil(6, 8, "beyaz"));
+	taslar.push(new At(7, 8, "beyaz"));
+	taslar.push(new Kale(8, 8, "beyaz"));
 	for(let i = 1; i < 9; i++){
-        pieces.push(new Pawn(i, 2, "black"));}
+        taslar.push(new Piyon(i, 2, "siyah"));}
 	for(let i = 1; i < 9; i++){
-        pieces.push(new Pawn(i, 7, "white"));}
-	for(let i = 0; i < pieces.length; i++){
-		getSquare(pieces[i].x, pieces[i].y).setPiece(pieces[i]);}};
+        taslar.push(new Piyon(i, 7, "beyaz"));}
+	for(let i = 0; i < taslar.length; i++){
+		hucreGetir(taslar[i].x, taslar[i].y).tasAta(taslar[i]);}};
 
-let showError = function(message) {
-    var errorElement = document.getElementById("errorText");
-    errorElement.innerHTML = message;
-    var overlayElement = document.getElementById("uyari_mesaji");
-    overlayElement.className = "overlay show";
-    var closeButton = document.getElementsByClassName("overlay-button")[0]; // Close butonunu seç
+let showError = function(mesaj) {
+    var hataElementi = document.getElementById("hata_mesaji");
+    hataElementi.innerHTML = mesaj;
+    var kaplamaElementi  = document.getElementById("uyari_mesaji");
+    kaplamaElementi .className = "kaplama show";
+    var kapatmaButonu = document.getElementsByClassName("kaplama-buton")[0]; // Close butonunu seç
 
     // Eğer mesaj "checkmate" ise, bir buton ekleyin
-    if (message === "Şah Mat") {
-        closeButton.innerHTML = "Yeni Oyun"; // Özel durum için metni değiştir
-        closeButton.onclick = function() { // Butona tıklandığında çalışacak fonksiyon
-            overlayElement.className = "overlay"; // Overlay'i gizle
-            errorElement.innerHTML = ""; // Hata mesajını temizle
-            restartGame();};
+    if (mesaj === "Şah Mat") {
+        kapatmaButonu.innerHTML = "Yeni Oyun"; // Özel durum için metni değiştir
+        kapatmaButonu.onclick = function() { // Butona tıklandığında çalışacak fonksiyon
+            kaplamaElementi .className = "kaplama"; // Overlay'i gizle
+            hataElementi.innerHTML = ""; // Hata mesajını temizle
+            yenidenBaslatma();};
         // Hata mesajı alanına butonu ekleyin
-        errorElement.appendChild(button);}}
+        hataElementi.appendChild(buton);}}
 
-let closeError = function(){
-	document.getElementById("uyari_mesaji").className = "overlay";}
+let hata_kapatma = function(){
+	document.getElementById("uyari_mesaji").className = "kaplama";}
 
-let getSquare = function(x, y){
-	return boardSquares[y*8+x-9];}
+let hucreGetir = function(x, y){
+	return tahtanin_hücreleri[y*8+x-9];}
 
-let squareClicked = function(){
+let hucreTiklama = function(){
 	let x = Number(this.getAttribute("data-x"));
 	let y = Number(this.getAttribute("data-y"));
-	let square = getSquare(x, y);
-	if(selectedSquare === null){
-        if(square.piece.color != currentPlayer.color){
+	let hucre = hucreGetir(x, y);
+	if(secilen_hucre === null){
+        if(hucre.tas.renk != aktifOyuncu.renk){
 		}else{
-			selectedSquare = getSquare(x, y);
-			selectedSquare.select();}}
+			secilen_hucre = hucreGetir(x, y);
+			secilen_hucre.sec();}}
     else{
-		if(selectedSquare.x == x && selectedSquare.y == y){
-			selectedSquare.deselect();
-			selectedSquare = null;}
+		if(secilen_hucre.x == x && secilen_hucre.y == y){
+			secilen_hucre.secimikaldir();
+			secilen_hucre = null;}
         else{
-            if(square.piece != null && square.piece.color == currentPlayer.color){
-                selectedSquare.deselect();
-                selectedSquare = getSquare(x, y);
-                selectedSquare.select();}
+            if(hucre.tas != null && hucre.tas.renk == aktifOyuncu.renk){
+                secilen_hucre.secimikaldir();
+                secilen_hucre = hucreGetir(x, y);
+                secilen_hucre.sec();}
             else {
-                move(selectedSquare, square);}}}}
+                move(secilen_hucre, hucre);}}}}
 
 let move = function(start, end){
-	let piece = start.piece;
-    currentPlayer.moved = start.piece;
-	let moveResult = piece.isValidMove(end);
-    if(currentPlayer==white) {
-        black.checked=false;
-        black.king.checkedBy=null;}
+	let tas = start.tas;
+    aktifOyuncu.hareket = start.tas;
+	let moveResult = tas.hareketKurallari(end);
+    if(aktifOyuncu==beyaz) {
+        siyah.sah_cekme=false;
+        siyah.sah.tehtidEdenTas=null;}
     else {
-        white.checked=false;
-        white.king.checkedBy=null;}
-	if(moveResult.valid){
+        beyaz.sah_cekme=false;
+        beyaz.sah.tehtidEdenTas=null;}
+	if(moveResult.gecerli){
         capturedPiece = null;
-        if(moveResult.capture !== null){
-            moveResult.capture.piece.capture();
-            capturedPiece = moveResult.capture.piece;
-            moveResult.capture.unsetPiece();}
-        piece.x = end.x;
-        piece.y = end.y;
-        end.setPiece(piece);
-        start.unsetPiece();
-        if(kingExposed(currentPlayer.king)){
-                end.unsetPiece();
-                piece.x = start.x;
-                piece.y = start.y;
-                start.setPiece(piece);
-                if(moveResult.capture !== null){
-                    capturedPiece.captured = false;
-                    moveResult.capture.setPiece(capturedPiece);}
+        if(moveResult.alma !== null){
+            moveResult.alma.tas.alma();
+            capturedPiece = moveResult.alma.tas;
+            moveResult.alma.tasKaldir();}
+        tas.x = end.x;
+        tas.y = end.y;
+        end.tasAta(tas);
+        start.tasKaldir();
+        if(kingExposed(aktifOyuncu.sah)){
+                end.tasKaldir();
+                tas.x = start.x;
+                tas.y = start.y;
+                start.tasAta(tas);
+                if(moveResult.alma !== null){
+                    capturedPiece.alinan_tas = false;
+                    moveResult.alma.tasAta(capturedPiece);}
                 return;}
-        end.piece.lastmoved = turn;
-        start.unsetPiece();
-        start.deselect();
-        selectedSquare = null;
-        if(moveResult.promote==true){
-            currentPlayer.promote=end.piece;
-            showPromotion(currentPlayer);
+        end.tas.sonhareket = sira;
+        start.tasKaldir();
+        start.secimikaldir();
+        secilen_hucre = null;
+        if(moveResult.terfi==true){
+            aktifOyuncu.terfi=end.tas;
+            showPromotion(aktifOyuncu);
             return;}
-        if(currentPlayer==white){
-            if(end.piece.isValidMove(getSquare(black.king.x, black.king.y),2).valid){
+        if(aktifOyuncu==beyaz){
+            if(end.tas.hareketKurallari(hucreGetir(siyah.sah.x, siyah.sah.y),2).gecerli){
                 showError("Şah")
-                black.checked=true;
-                black.king.checkedBy = end.piece;}
-            if(kingExposed(black.king)){
-                black.checked=true;
-                if(isCheckmate(black.king)){
+                siyah.sah_cekme=true;
+                siyah.sah.tehtidEdenTas = end.tas;}
+            if(kingExposed(siyah.sah)){
+                siyah.sah_cekme=true;
+                if(isCheckmate(siyah.sah)){
                     showError("Şah Mat");
                     return;}
                 showError("Şah")}}
         else{
-            if(end.piece.isValidMove(getSquare(white.king.x, white.king.y),2).valid){
+            if(end.tas.hareketKurallari(hucreGetir(beyaz.sah.x, beyaz.sah.y),2).gecerli){
                 showError("Şah")
-                white.checked=true;
-                white.king.checkedBy = end.piece;}
-            if(kingExposed(white.king)){
-                white.checked=true;
-                if(isCheckmate(white.king)){
+                beyaz.sah_cekme=true;
+                beyaz.sah.tehtidEdenTas = end.tas;}
+            if(kingExposed(beyaz.sah)){
+                beyaz.sah_cekme=true;
+                if(isCheckmate(beyaz.sah)){
                     showError("Şah Mat");
                     return;}
                 showError("Şah")}}
         nextTurn();
 	}else{
-        piece.x = start.x;
-        piece.y = start.y;
-        start.setPiece(start.piece);}}
+        tas.x = start.x;
+        tas.y = start.y;
+        start.tasAta(start.tas);}}
 
-let isCheckmate = function(king){
-    let myPlayer = currentPlayer;
-    let otherPlayer = currentPlayer==white?black:white;
-    currentPlayer=otherPlayer;
-    if(currentPlayer.checked==false){
-        currentPlayer=myPlayer;
+let isCheckmate = function(sah){
+    let myPlayer = aktifOyuncu;
+    let otherPlayer = aktifOyuncu==beyaz?siyah:beyaz;
+    aktifOyuncu=otherPlayer;
+    if(aktifOyuncu.sah_cekme==false){
+        aktifOyuncu=myPlayer;
         return false;}
     for(let i=-1;i<2;i++){
         for(let j=-1;j<2;j++){
-            if(king.x+i<=8&&king.x+i>=1){
-                if(king.y+j<=8&&king.y+j>=1){
+            if(sah.x+i<=8&&sah.x+i>=1){
+                if(sah.y+j<=8&&sah.y+j>=1){
                     if(i!=0||j!=0){
-                        if(getSquare(king.x+i,king.y+j).piece!=null&&getSquare(king.x+i,king.y+j).piece.color==currentPlayer.color) {
+                        if(hucreGetir(sah.x+i,sah.y+j).tas!=null&&hucreGetir(sah.x+i,sah.y+j).tas.renk==aktifOyuncu.renk) {
                             continue;}
-                        let square = getSquare(king.x+i,king.y+j);
-                        if(king.isValidMove(square).valid&&!square.hasPiece()){
-                            let oldsquare = getSquare(king.x, king.y);
-                            oldsquare.unsetPiece(king);
-                            square.setPiece(king);
+                        let hucre = hucreGetir(sah.x+i,sah.y+j);
+                        if(sah.hareketKurallari(hucre).gecerli&&!hucre.hucreDolulugu()){
+                            let oldsquare = hucreGetir(sah.x, sah.y);
+                            oldsquare.tasKaldir(sah);
+                            hucre.tasAta(sah);
                             let kingId = -1;
-                            if(king.color=="white")
+                            if(sah.renk=="beyaz")
                                 kingId = 0;
                             else kingId = 1;
-                            pieces[kingId].x= king.x+i;
-                            pieces[kingId].y= king.y+j;
-                            if(!kingExposed(currentPlayer.king)){
-                                square.unsetPiece(king);
-                                oldsquare.setPiece(king);
-                                pieces[kingId].x= oldsquare.x;
-                                pieces[kingId].y= oldsquare.y;
-                                currentPlayer=myPlayer;
+                            taslar[kingId].x= sah.x+i;
+                            taslar[kingId].y= sah.y+j;
+                            if(!kingExposed(aktifOyuncu.sah)){
+                                hucre.tasKaldir(sah);
+                                oldsquare.tasAta(sah);
+                                taslar[kingId].x= oldsquare.x;
+                                taslar[kingId].y= oldsquare.y;
+                                aktifOyuncu=myPlayer;
                                 return false;}
-                            square.unsetPiece(king);
-                            oldsquare.setPiece(king);
-                            pieces[kingId].x= oldsquare.x;
-                            pieces[kingId].y= oldsquare.y;}}}}}}
-    for(let i=0;i<pieces.length;i++){
-        if(currentPlayer.color== pieces[i].color){
-            if(pieces[i].isValidMove(getSquare(king.checkedBy.x, king.checkedBy.y),2).valid){
-                currentPlayer=myPlayer;
+                            hucre.tasKaldir(sah);
+                            oldsquare.tasAta(sah);
+                            taslar[kingId].x= oldsquare.x;
+                            taslar[kingId].y= oldsquare.y;}}}}}}
+    for(let i=0;i<taslar.length;i++){
+        if(aktifOyuncu.renk== taslar[i].renk){
+            if(taslar[i].hareketKurallari(hucreGetir(sah.tehtidEdenTas.x, sah.tehtidEdenTas.y),2).gecerli){
+                aktifOyuncu=myPlayer;
                 return false;}}}
-    if(king.checkedBy.piece instanceof Knight) return true;
-    for(let i=0;i<pieces.length;i++){
-        if(pieces[i].captured==true) continue;
-        if(currentPlayer.color==pieces[i].color){
-            if(pieces[i] instanceof Pawn) {
+    if(sah.tehtidEdenTas.tas instanceof At) return true;
+    for(let i=0;i<taslar.length;i++){
+        if(taslar[i].alinan_tas==true) continue;
+        if(aktifOyuncu.renk==taslar[i].renk){
+            if(taslar[i] instanceof Piyon) {
                 for(let dir=1;dir<=2;dir++){
-                    let direction = currentPlayer.color == "white" ? -1 : 1;
-                    let square = getSquare(pieces[i].x,pieces[i].y+direction*dir)
-                    if(pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);}
+                    let direction = aktifOyuncu.renk == "beyaz" ? -1 : 1;
+                    let hucre = hucreGetir(taslar[i].x,taslar[i].y+direction*dir)
+                    if(taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);}
                     else continue;
-                    if(!kingExposed(currentPlayer.king)){
-                        square.unsetPiece(pieces[i]);
-                        currentPlayer=myPlayer;
+                    if(!kingExposed(aktifOyuncu.sah)){
+                        hucre.tasKaldir(taslar[i]);
+                        aktifOyuncu=myPlayer;
                         return false;}
-                    square.unsetPiece(pieces[i]);}}
-            else if(pieces[i] instanceof Knight){
+                    hucre.tasKaldir(taslar[i]);}}
+            else if(taslar[i] instanceof At){
                 for(let dir=1;dir<=2;dir++){
-                    let square = getSquare(pieces[i].x+(3-dir),pieces[i].y+dir)
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                    let hucre = hucreGetir(taslar[i].x+(3-dir),taslar[i].y+dir)
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}
-                    square = getSquare(pieces[i].x+(3-dir),pieces[i].y-dir)
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                        hucre.tasKaldir(taslar[i]);}
+                    hucre = hucreGetir(taslar[i].x+(3-dir),taslar[i].y-dir)
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}
-                    square = getSquare(pieces[i].x-dir,pieces[i].y+(3-dir))
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                        hucre.tasKaldir(taslar[i]);}
+                    hucre = hucreGetir(taslar[i].x-dir,taslar[i].y+(3-dir))
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}
-                    square = getSquare(pieces[i].x-dir,pieces[i].y-(3-dir))
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                        hucre.tasKaldir(taslar[i]);}
+                    hucre = hucreGetir(taslar[i].x-dir,taslar[i].y-(3-dir))
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}}}
-            else if(pieces[i] instanceof Castle){
+                        hucre.tasKaldir(taslar[i]);}}}
+            else if(taslar[i] instanceof Kale){
                 for(let k=-8;k<=8;k++){
-                    if(pieces[i].x+k>=1&&pieces[i].x+k<=8&&pieces[i].y+k>=1&&pieces[i].y+k<=8){
-                        let square = getSquare(pieces[i].x+k,pieces[i].y);
-                        if(pieces[i].isValidMove(square,2).valid){
-                            square.setPiece(pieces[i]);
-                            if(!kingExposed(currentPlayer.king)){
-                                currentPlayer=myPlayer;
-                                square.unsetPiece(pieces[i]);
+                    if(taslar[i].x+k>=1&&taslar[i].x+k<=8&&taslar[i].y+k>=1&&taslar[i].y+k<=8){
+                        let hucre = hucreGetir(taslar[i].x+k,taslar[i].y);
+                        if(taslar[i].hareketKurallari(hucre,2).gecerli){
+                            hucre.tasAta(taslar[i]);
+                            if(!kingExposed(aktifOyuncu.sah)){
+                                aktifOyuncu=myPlayer;
+                                hucre.tasKaldir(taslar[i]);
                                 return false;}
-                            square.unsetPiece(pieces[i]);}
-                        square = getSquare(pieces[i].x,pieces[i].y+k);
-                        if(pieces[i].isValidMove(square,2).valid){
-                            square.setPiece(pieces[i]);
-                            if(!kingExposed(currentPlayer.king)){
-                                currentPlayer=myPlayer;
-                                square.unsetPiece(pieces[i]);
+                            hucre.tasKaldir(taslar[i]);}
+                        hucre = hucreGetir(taslar[i].x,taslar[i].y+k);
+                        if(taslar[i].hareketKurallari(hucre,2).gecerli){
+                            hucre.tasAta(taslar[i]);
+                            if(!kingExposed(aktifOyuncu.sah)){
+                                aktifOyuncu=myPlayer;
+                                hucre.tasKaldir(taslar[i]);
                                 return false;}
-                            square.unsetPiece(pieces[i]);}}}}
-            else if(pieces[i] instanceof Bishop){
+                            hucre.tasKaldir(taslar[i]);}}}}
+            else if(taslar[i] instanceof Fil){
                 for(let k=-8;k<=8;k++){
-                    let square = getSquare(pieces[i].x+k,pieces[i].y+k);
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                    let hucre = hucreGetir(taslar[i].x+k,taslar[i].y+k);
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}
-                    square = getSquare(pieces[i].x+k,pieces[i].y-k);
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                        hucre.tasKaldir(taslar[i]);}
+                    hucre = hucreGetir(taslar[i].x+k,taslar[i].y-k);
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}}}
-            else if(pieces[i] instanceof Queen){
+                        hucre.tasKaldir(taslar[i]);}}}
+            else if(taslar[i] instanceof Vezir){
                 for(let k=-8;k<=8;k++){
-                    let square = getSquare(pieces[i].x+k,pieces[i].y+k);
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                    let hucre = hucreGetir(taslar[i].x+k,taslar[i].y+k);
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}
-                    square = getSquare(pieces[i].x+k,pieces[i].y-k);
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                        hucre.tasKaldir(taslar[i]);}
+                    hucre = hucreGetir(taslar[i].x+k,taslar[i].y-k);
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}}
+                        hucre.tasKaldir(taslar[i]);}}
                 for(let k=-8;k<=8;k++){
-                    let square = getSquare(pieces[i].x+k,pieces[i].y+k)
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                    let hucre = hucreGetir(taslar[i].x+k,taslar[i].y+k)
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}
-                    square = getSquare(pieces[i].x+k,pieces[i].y-k)
-                    if(square!=null&&pieces[i].isValidMove(square,2).valid){
-                        square.setPiece(pieces[i]);
-                        if(!kingExposed(currentPlayer.king)){
-                            currentPlayer=myPlayer;
-                            square.unsetPiece(pieces[i]);
+                        hucre.tasKaldir(taslar[i]);}
+                    hucre = hucreGetir(taslar[i].x+k,taslar[i].y-k)
+                    if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
+                        hucre.tasAta(taslar[i]);
+                        if(!kingExposed(aktifOyuncu.sah)){
+                            aktifOyuncu=myPlayer;
+                            hucre.tasKaldir(taslar[i]);
                             return false;}
-                        square.unsetPiece(pieces[i]);}}}}}
+                        hucre.tasKaldir(taslar[i]);}}}}}
     return true;}
 
-let showPromotion = function(player){
-	document.getElementById("terfi_mesaji").className = "overlay show";
-	document.getElementById("promotionList").className = player.color;}
+let showPromotion = function(oyuncu){
+	document.getElementById("terfi_mesaji").className = "kaplama show";
+	document.getElementById("terfi_taslari").className = oyuncu.renk;}
 
 let closePromotion = function(){
-	document.getElementById("terfi_mesaji").className = "overlay";}
+	document.getElementById("terfi_mesaji").className = "kaplama";}
 
-let promote = function(type){
+let terfi = function(type){
 	let newPiece;
-	let oldPiece = currentPlayer.promote;
-	let index = pieces.indexOf(oldPiece);
+	let oncekiTas = aktifOyuncu.terfi;
+	let index = taslar.indexOf(oncekiTas);
 	switch(type){
-		case "queen":
-			newPiece = new Queen(oldPiece.x, oldPiece.y, oldPiece.color);
+		case "vezir":
+			newPiece = new Vezir(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;
-		case "castle":
-			newPiece = new Castle(oldPiece.x, oldPiece.y, oldPiece.color);
+		case "kale":
+			newPiece = new Kale(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;
-		case "bishop":
-			newPiece = new Bishop(oldPiece.x, oldPiece.y, oldPiece.color);
+		case "fil":
+			newPiece = new Fil(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;
-		case "knight":
-			newPiece = new Knight(oldPiece.x, oldPiece.y, oldPiece.color);
+		case "at":
+			newPiece = new At(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;}
 	if(index != -1){
-        getSquare(oldPiece.x, oldPiece.y).unsetPiece();
-		pieces[index] = newPiece;
-		getSquare(oldPiece.x, oldPiece.y).setPiece(newPiece);
-		currentPlayer.promote = null;
+        hucreGetir(oncekiTas.x, oncekiTas.y).tasKaldir();
+		taslar[index] = newPiece;
+		hucreGetir(oncekiTas.x, oncekiTas.y).tasAta(newPiece);
+		aktifOyuncu.terfi = null;
 		closePromotion();
-		if(currentPlayer==white){
-            if(newPiece.isValidMove(getSquare(black.king.x, black.king.y),2).valid){
+		if(aktifOyuncu==beyaz){
+            if(newPiece.hareketKurallari(hucreGetir(siyah.sah.x, siyah.sah.y),2).gecerli){
                 showError("Şah")
-                black.checked=true;
-                white.king.checkedBy = newPiece;}
-            if(kingExposed(black.king)){
+                siyah.sah_cekme=true;
+                beyaz.sah.tehtidEdenTas = newPiece;}
+            if(kingExposed(siyah.sah)){
                 showError("Şah")
-                black.checked=true;
-                black.king.checkedBy = newPiece;}}
+                siyah.sah_cekme=true;
+                siyah.sah.tehtidEdenTas = newPiece;}}
         else{
-            if(newPiece.isValidMove(getSquare(white.king.x, white.king.y),2).valid){
+            if(newPiece.hareketKurallari(hucreGetir(beyaz.sah.x, beyaz.sah.y),2).gecerli){
                 showError("Şah")
-                white.checked=true;}
-            if(kingExposed(white.king)){
+                beyaz.sah_cekme=true;}
+            if(kingExposed(beyaz.sah)){
                 showError("Şah")
-                white.checked=true;}}
+                beyaz.sah_cekme=true;}}
         nextTurn();}}
 
 let kingExposed = function(at){
-    for(let i=0;i<pieces.length;i++){
-        let square = getSquare(pieces[i].x, pieces[i].y);
-        if(pieces[i].color != at.color && pieces[i].captured==false){
-            if(pieces[i] instanceof Pawn){
-                let direction = pieces[i].color == "white" ? -1 : 1;
-                let movementY = (at.y-pieces[i].y);
-                let movementX = (at.x-pieces[i].x);
-                if(movementY == direction){
-                    if(Math.abs(movementX) == 1){
-                        at.checkedBy = pieces[i];
+    for(let i=0;i<taslar.length;i++){
+        let hucre = hucreGetir(taslar[i].x, taslar[i].y);
+        if(taslar[i].renk != at.renk && taslar[i].alinan_tas==false){
+            if(taslar[i] instanceof Piyon){
+                let direction = taslar[i].renk == "beyaz" ? -1 : 1;
+                let hareketY = (at.y-taslar[i].y);
+                let hareketX = (at.x-taslar[i].x);
+                if(hareketY == direction){
+                    if(Math.abs(hareketX) == 1){
+                        at.tehtidEdenTas = taslar[i];
                         return true;}}}
             else{
-                if(square.piece.isValidMove(getSquare(at.x, at.y)).valid){
-                    at.checkedBy = pieces[i];
+                if(hucre.tas.hareketKurallari(hucreGetir(at.x, at.y)).gecerli){
+                    at.tehtidEdenTas = taslar[i];
                     return true;}}}}
     return false;}
 
 let nextTurn = function(){
-    turn++;
-	if(currentPlayer.color == "white"){
-		currentPlayer = black;
+    sira++;
+	if(aktifOyuncu.renk == "beyaz"){
+		aktifOyuncu = siyah;
         document.getElementById("turnInfo").innerHTML = "Hamle Sırası: <b>Siyah</b>";
 	}else{
-		currentPlayer = white;
+		aktifOyuncu = beyaz;
         document.getElementById("turnInfo").innerHTML = "Hamle Sırası: <b>Beyaz</b>";}}
 
 //eklemeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee//
-function displayCapturedPiece(piece) {
-    var capturedContainer = document.querySelector('.captured.' + piece.color);
+function alinanTasinGosterimi(tas) {
+    var capturedContainer = document.querySelector('.alinan_tas.' + tas.renk);
     var img = document.createElement('div');
-    img.className = 'captured-piece';
-    img.style.backgroundImage = 'url("../pieces.png")';
-    img.style.backgroundPosition = getBackgroundPosition(piece);
+    img.className = 'alinan_tas-tas';
+    img.style.backgroundImage = 'url("../taslar.png")';
+    img.style.backgroundPosition = getBackgroundPosition(tas);
     img.style.width = '80px'; // Gereksinimlerinize göre ayarlayın
     img.style.height = '80px'; // Gereksinimlerinize göre ayarlayın
     capturedContainer.appendChild(img);
     // Skor güncelleme
-    updateScore(piece);}
+    updateScore(tas);}
 
-function getBackgroundPosition(piece) {
+function getBackgroundPosition(tas) {
     var indexMap = {
-        'queen': 1,  // Vezirin pozisyonu
-        'bishop': 2, // Filin pozisyonu
-        'knight': 3, // Atın pozisyonu
-        'castle': 4,   // Kalenin pozisyonu
-        'pawn': 5    // Piyonun pozisyonu
+        'vezir': 1,  // Vezirin pozisyonu
+        'fil': 2, // Filin pozisyonu
+        'at': 3, // Atın pozisyonu
+        'kale': 4,   // Kalenin pozisyonu
+        'piyon': 5    // Piyonun pozisyonu
     };
-    var x = (indexMap[piece.type] * -100) + '%'; // X pozisyonunu hesaplama, 6 sütun var
-    var y = piece.color === 'white' ? '0%' : '-100%'; // Y pozisyonunu hesaplama, 2 satır var
+    var x = (indexMap[tas.type] * -100) + '%'; // X pozisyonunu hesaplama, 6 sütun var
+    var y = tas.renk === 'beyaz' ? '0%' : '-100%'; // Y pozisyonunu hesaplama, 2 satır var
     return x+" "+y;}
 
-function restartGame() {
+function yenidenBaslatma() {
     window.location.reload();}
 
-let whiteScore = 0;
-let blackScore = 0;
+let beyazScore = 0;
+let siyahScore = 0;
 
-function updateScore(piece) {
-    switch(piece.type){
-        case "queen":
+function updateScore(tas) {
+    switch(tas.type){
+        case "vezir":
             point = 9; // Siyah vezir yendi
             break;
-        case "castle":
+        case "kale":
             point = 5; // Siyah kale yendi
             break;
-        case "bishop":
+        case "fil":
             point = 3; // Siyah fil yendi
             break;
-        case "knight":
+        case "at":
             point = 3; // Siyah at yendi
             break;
-        case "pawn":
+        case "piyon":
             point = 1; // Siyah piyon yendi
             break;}
-    if (piece.color === 'white') {
-        blackScore = blackScore + point
-        document.getElementById('blackScore').innerText = blackScore;
+    if (tas.renk === 'beyaz') {
+        siyahScore = siyahScore + point
+        document.getElementById('siyahScore').innerText = siyahScore;
     } else {
-        whiteScore = whiteScore + point; // Beyaz taş yendi, beyaz skoru artır
-        document.getElementById('whiteScore').innerText = whiteScore;}}
+        beyazScore = beyazScore + point; // Beyaz taş yendi, beyaz skoru artır
+        document.getElementById('beyazScore').innerText = beyazScore;}}

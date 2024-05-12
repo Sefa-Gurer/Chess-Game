@@ -11,51 +11,51 @@
 </head>
 
 <!-- js fonksiyonunun çağırılması -->
-<body onload="setup();">
+<body onload="run();">
 
 <h1>Meltem, Sefa, Açelya ve Beyza Satranç Projesi</h1>
 <p id="turnInfo">Hamle Sırası: <b>Beyaz</b></p>
 <section id="board">
 
 	<!-- terfi seçimi için gösterilecek mesaj penceresinin tanımlaması -->
-    <div class="overlay" id="terfi_mesaji">
-        <div class="overlay-inner">
-            <span class="overlay-title">Terfi İçin Taş Seç!</span>
-            <p class="overlay-text" id="uyari"></p>
-            <ul id="promotionList" class="white">
-                <li><a href="#" class="promotion-button queen" onclick="promote('queen');"></a></li>
-                <li><a href="#" class="promotion-button castle" onclick="promote('castle');"></a></li>
-                <li><a href="#" class="promotion-button bishop" onclick="promote('bishop');"></a></li>
-                <li><a href="#" class="promotion-button knight" onclick="promote('knight');"></a></li>
+    <div class="kaplama" id="terfi_mesaji">
+        <div class="kaplama-ic_kisim">
+            <span class="kaplama-baslik">Terfi İçin Taş Seç!</span>
+            <p class="kaplama-yazi" id="uyari"></p>
+            <ul id="terfi_taslari" class="beyaz">
+                <li><a href="#" class="terfi-buton vezir" onclick="promote('vezir');"></a></li>
+                <li><a href="#" class="terfi-buton kale" onclick="promote('kale');"></a></li>
+                <li><a href="#" class="terfi-buton fil" onclick="promote('fil');"></a></li>
+                <li><a href="#" class="terfi-buton at" onclick="promote('at');"></a></li>
             </ul>
         </div>
     </div>
 
 	<!-- hata mesajı penceresinin tanımlanması -->
-	<div class="overlay" id="uyari_mesaji">
-		<div class="overlay-inner">
-			<span class="overlay-title">Uyarı!</span>
-			<p class="overlay-text" id="errorText"></p>
-			<a href="#" class="overlay-button" onclick="closeError();">Close</a>
+	<div class="kaplama" id="uyari_mesaji">
+		<div class="kaplama-ic_kisim">
+			<span class="kaplama-baslik">Uyarı!</span>
+			<p class="kaplama-yazi" id="hata_mesaji"></p>
+			<a href="#" class="kaplama-buton" onclick="hata_kapatma();">Close</a>
 		</div>
 	</div>
 </section>
 
 <!-- eklemeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee -->
-<div id="captured-pieces" class="captured-container">
-    <div class="captured white"></div>
-    <div class="captured black"></div>
+<div id="alinan_tas-taslar" class="alinan_tas-kutu">
+    <div class="alinan_tas beyaz"></div>
+    <div class="alinan_tas siyah"></div>
 </div>
 
 <!-- Skor gösterim alanları -->
-<div class="score-container">
-    <div class="score black-score">
+<div class="skor-kutu">
+    <div class="skor siyah-skor">
         <div class="label">Siyah Skor:</div>
-        <span id="blackScore">0</span>
+        <span id="siyahScore">0</span>
     </div>
-    <div class="score white-score">
+    <div class="skor beyaz-skor">
         <div class="label">Beyaz Skor:</div>
-        <span id="whiteScore">0</span>
+        <span id="beyazScore">0</span>
     </div>
 </div>
 
