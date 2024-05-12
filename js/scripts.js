@@ -205,10 +205,10 @@ Sah.prototype.hareketKurallari = function(hedefHucre,n=1){
             if(hucre.tas != null && taslar[i].alinan_tas==false){
                 if(taslar[i].renk != aktifOyuncu.renk){
                     if(taslar[i] instanceof Piyon){
-                        let direction = taslar[i].renk == "beyaz" ? -1 : 1;
+                        let yon = taslar[i].renk == "beyaz" ? -1 : 1;
                         let hareketY = (hedefHucre.y-taslar[i].y);
                         let hareketX = (hedefHucre.x-taslar[i].x);
-                        if(hareketY == direction){
+                        if(hareketY == yon){
                             if(Math.abs(hareketX) == 1 && Math.abs(hareketY) == 1){
                                 if(this.renk != taslar[i].renk){
                                     sonuc.gecerli= false;
@@ -242,10 +242,10 @@ Sah.prototype.hareketKurallari = function(hedefHucre,n=1){
                                aktifOyuncu.sahHareketi=true;
                                aktifOyuncu.sah.x= 7;
                                aktifOyuncu.sah.y= Y;
-                               if(!kingExposed(aktifOyuncu.sah)){
+                               if(!sahCekme(aktifOyuncu.sah)){
                                    aktifOyuncu.sah.x= 6;
                                    aktifOyuncu.sah.y= 8;
-                                   if( !kingExposed(aktifOyuncu.sah)){
+                                   if( !sahCekme(aktifOyuncu.sah)){
                                        sonuc.gecerli=true;
                                        aktifOyuncu.sahHareketi=true;
                                        let rook = hucreGetir(8,Y).tas;
@@ -263,10 +263,10 @@ Sah.prototype.hareketKurallari = function(hedefHucre,n=1){
                                aktifOyuncu.sahHareketi=true;
                                aktifOyuncu.sah.x= 3;
                                aktifOyuncu.sah.y= Y;
-                               if(!kingExposed(aktifOyuncu.sah)){
+                               if(!sahCekme(aktifOyuncu.sah)){
                                    aktifOyuncu.sah.x= 4;
                                    aktifOyuncu.sah.y= Y;
-                                   if( !kingExposed(aktifOyuncu.sah)){
+                                   if( !sahCekme(aktifOyuncu.sah)){
                                        sonuc.gecerli=true;
                                        aktifOyuncu.sahHareketi=true;
                                        let rook = hucreGetir(1,Y).tas;
@@ -300,12 +300,12 @@ Piyon.prototype.hareketKurallari = function(hedefHucre,n=1){
     if(n==0) return {gecerli:false, alma:null};
 	let hareketY = (hedefHucre.y-this.y);
 	let hareketX = (hedefHucre.x-this.x);
-	let direction = this.renk == "beyaz" ? -1 : 1;
+	let yon = this.renk == "beyaz" ? -1 : 1;
 	let sonuc = {gecerli : false, alma : null};
-	if(hareketY == direction * 2 && hareketX == 0 && this.y == (this.renk == "beyaz" ? 7 : 2) && !hucreGetir(this.x, this.y+direction).hucreDolulugu() && !hedefHucre.hucreDolulugu()){
+	if(hareketY == yon * 2 && hareketX == 0 && this.y == (this.renk == "beyaz" ? 7 : 2) && !hucreGetir(this.x, this.y+yon).hucreDolulugu() && !hedefHucre.hucreDolulugu()){
 		sonuc = {gecerli : true, alma : null};
     this.ikiileri = sira;
-	}else if(hareketY == direction){
+	}else if(hareketY == yon){
 		if(Math.abs(hareketX) == 1){
 			if(hedefHucre.hucreDolulugu() && hedefHucre.tas.renk != this.renk){
 				sonuc = {gecerli : true, alma : hedefHucre};}
@@ -369,7 +369,7 @@ let run = function(){
 	for(let i = 0; i < taslar.length; i++){
 		hucreGetir(taslar[i].x, taslar[i].y).tasAta(taslar[i]);}};
 
-let showError = function(mesaj) {
+let hataMesaji = function(mesaj) {
     var hataElementi = document.getElementById("hata_mesaji");
     hataElementi.innerHTML = mesaj;
     var kaplamaElementi  = document.getElementById("uyari_mesaji");
@@ -411,79 +411,79 @@ let hucreTiklama = function(){
                 secilen_hucre = hucreGetir(x, y);
                 secilen_hucre.sec();}
             else {
-                move(secilen_hucre, hucre);}}}}
+                hamle(secilen_hucre, hucre);}}}}
 
-let move = function(start, end){
-	let tas = start.tas;
-    aktifOyuncu.hareket = start.tas;
-	let moveResult = tas.hareketKurallari(end);
+let hamle = function(baslangic, bitis){
+	let tas = baslangic.tas;
+    aktifOyuncu.hareket = baslangic.tas;
+	let hamleSonucu = tas.hareketKurallari(bitis);
     if(aktifOyuncu==beyaz) {
         siyah.sah_cekme=false;
         siyah.sah.tehtidEdenTas=null;}
     else {
         beyaz.sah_cekme=false;
         beyaz.sah.tehtidEdenTas=null;}
-	if(moveResult.gecerli){
-        capturedPiece = null;
-        if(moveResult.alma !== null){
-            moveResult.alma.tas.alma();
-            capturedPiece = moveResult.alma.tas;
-            moveResult.alma.tasKaldir();}
-        tas.x = end.x;
-        tas.y = end.y;
-        end.tasAta(tas);
-        start.tasKaldir();
-        if(kingExposed(aktifOyuncu.sah)){
-                end.tasKaldir();
-                tas.x = start.x;
-                tas.y = start.y;
-                start.tasAta(tas);
-                if(moveResult.alma !== null){
-                    capturedPiece.alinan_tas = false;
-                    moveResult.alma.tasAta(capturedPiece);}
+	if(hamleSonucu.gecerli){
+        alinanTas = null;
+        if(hamleSonucu.alma !== null){
+            hamleSonucu.alma.tas.alma();
+            alinanTas = hamleSonucu.alma.tas;
+            hamleSonucu.alma.tasKaldir();}
+        tas.x = bitis.x;
+        tas.y = bitis.y;
+        bitis.tasAta(tas);
+        baslangic.tasKaldir();
+        if(sahCekme(aktifOyuncu.sah)){
+                bitis.tasKaldir();
+                tas.x = baslangic.x;
+                tas.y = baslangic.y;
+                baslangic.tasAta(tas);
+                if(hamleSonucu.alma !== null){
+                    alinanTas.alinan_tas = false;
+                    hamleSonucu.alma.tasAta(alinanTas);}
                 return;}
-        end.tas.sonhareket = sira;
-        start.tasKaldir();
-        start.secimikaldir();
+        bitis.tas.sonhareket = sira;
+        baslangic.tasKaldir();
+        baslangic.secimikaldir();
         secilen_hucre = null;
-        if(moveResult.terfi==true){
-            aktifOyuncu.terfi=end.tas;
-            showPromotion(aktifOyuncu);
+        if(hamleSonucu.terfi==true){
+            aktifOyuncu.terfi=bitis.tas;
+            terfiEkrani(aktifOyuncu);
             return;}
         if(aktifOyuncu==beyaz){
-            if(end.tas.hareketKurallari(hucreGetir(siyah.sah.x, siyah.sah.y),2).gecerli){
-                showError("Şah")
+            if(bitis.tas.hareketKurallari(hucreGetir(siyah.sah.x, siyah.sah.y),2).gecerli){
+                hataMesaji("Şah")
                 siyah.sah_cekme=true;
-                siyah.sah.tehtidEdenTas = end.tas;}
-            if(kingExposed(siyah.sah)){
+                siyah.sah.tehtidEdenTas = bitis.tas;}
+            if(sahCekme(siyah.sah)){
                 siyah.sah_cekme=true;
-                if(isCheckmate(siyah.sah)){
-                    showError("Şah Mat");
+                if(Sahmat(siyah.sah)){
+                    hataMesaji("Şah Mat");
                     return;}
-                showError("Şah")}}
+                hataMesaji("Şah")}}
         else{
-            if(end.tas.hareketKurallari(hucreGetir(beyaz.sah.x, beyaz.sah.y),2).gecerli){
-                showError("Şah")
+            if(bitis.tas.hareketKurallari(hucreGetir(beyaz.sah.x, beyaz.sah.y),2).gecerli){
+                hataMesaji("Şah")
                 beyaz.sah_cekme=true;
-                beyaz.sah.tehtidEdenTas = end.tas;}
-            if(kingExposed(beyaz.sah)){
+                beyaz.sah.tehtidEdenTas = bitis.tas;}
+            if(sahCekme(beyaz.sah)){
                 beyaz.sah_cekme=true;
-                if(isCheckmate(beyaz.sah)){
-                    showError("Şah Mat");
+                if(Sahmat(beyaz.sah)){
+                    hataMesaji("Şah Mat");
                     return;}
-                showError("Şah")}}
-        nextTurn();
+                hataMesaji("Şah")}}
+        siraDegisimi();
 	}else{
-        tas.x = start.x;
-        tas.y = start.y;
-        start.tasAta(start.tas);}}
+        tas.x = baslangic.x;
+        tas.y = baslangic.y;
+        baslangic.tasAta(baslangic.tas);}}
 
-let isCheckmate = function(sah){
-    let myPlayer = aktifOyuncu;
-    let otherPlayer = aktifOyuncu==beyaz?siyah:beyaz;
-    aktifOyuncu=otherPlayer;
+let Sahmat = function(sah){
+    let aktifOyuncu = aktifOyuncu;
+    let digerOyuncu = aktifOyuncu==beyaz?siyah:beyaz;
+    aktifOyuncu=digerOyuncu;
     if(aktifOyuncu.sah_cekme==false){
-        aktifOyuncu=myPlayer;
+        aktifOyuncu=aktifOyuncu;
         return false;}
     for(let i=-1;i<2;i++){
         for(let j=-1;j<2;j++){
@@ -494,30 +494,30 @@ let isCheckmate = function(sah){
                             continue;}
                         let hucre = hucreGetir(sah.x+i,sah.y+j);
                         if(sah.hareketKurallari(hucre).gecerli&&!hucre.hucreDolulugu()){
-                            let oldsquare = hucreGetir(sah.x, sah.y);
-                            oldsquare.tasKaldir(sah);
+                            let oncekihucre = hucreGetir(sah.x, sah.y);
+                            oncekihucre.tasKaldir(sah);
                             hucre.tasAta(sah);
-                            let kingId = -1;
+                            let sahId = -1;
                             if(sah.renk=="beyaz")
-                                kingId = 0;
-                            else kingId = 1;
-                            taslar[kingId].x= sah.x+i;
-                            taslar[kingId].y= sah.y+j;
-                            if(!kingExposed(aktifOyuncu.sah)){
+                                sahId = 0;
+                            else sahId = 1;
+                            taslar[sahId].x= sah.x+i;
+                            taslar[sahId].y= sah.y+j;
+                            if(!sahCekme(aktifOyuncu.sah)){
                                 hucre.tasKaldir(sah);
-                                oldsquare.tasAta(sah);
-                                taslar[kingId].x= oldsquare.x;
-                                taslar[kingId].y= oldsquare.y;
-                                aktifOyuncu=myPlayer;
+                                oncekihucre.tasAta(sah);
+                                taslar[sahId].x= oncekihucre.x;
+                                taslar[sahId].y= oncekihucre.y;
+                                aktifOyuncu=aktifOyuncu;
                                 return false;}
                             hucre.tasKaldir(sah);
-                            oldsquare.tasAta(sah);
-                            taslar[kingId].x= oldsquare.x;
-                            taslar[kingId].y= oldsquare.y;}}}}}}
+                            oncekihucre.tasAta(sah);
+                            taslar[sahId].x= oncekihucre.x;
+                            taslar[sahId].y= oncekihucre.y;}}}}}}
     for(let i=0;i<taslar.length;i++){
         if(aktifOyuncu.renk== taslar[i].renk){
             if(taslar[i].hareketKurallari(hucreGetir(sah.tehtidEdenTas.x, sah.tehtidEdenTas.y),2).gecerli){
-                aktifOyuncu=myPlayer;
+                aktifOyuncu=aktifOyuncu;
                 return false;}}}
     if(sah.tehtidEdenTas.tas instanceof At) return true;
     for(let i=0;i<taslar.length;i++){
@@ -525,14 +525,14 @@ let isCheckmate = function(sah){
         if(aktifOyuncu.renk==taslar[i].renk){
             if(taslar[i] instanceof Piyon) {
                 for(let dir=1;dir<=2;dir++){
-                    let direction = aktifOyuncu.renk == "beyaz" ? -1 : 1;
-                    let hucre = hucreGetir(taslar[i].x,taslar[i].y+direction*dir)
+                    let yon = aktifOyuncu.renk == "beyaz" ? -1 : 1;
+                    let hucre = hucreGetir(taslar[i].x,taslar[i].y+yon*dir)
                     if(taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);}
                     else continue;
-                    if(!kingExposed(aktifOyuncu.sah)){
+                    if(!sahCekme(aktifOyuncu.sah)){
                         hucre.tasKaldir(taslar[i]);
-                        aktifOyuncu=myPlayer;
+                        aktifOyuncu=aktifOyuncu;
                         return false;}
                     hucre.tasKaldir(taslar[i]);}}
             else if(taslar[i] instanceof At){
@@ -540,32 +540,32 @@ let isCheckmate = function(sah){
                     let hucre = hucreGetir(taslar[i].x+(3-dir),taslar[i].y+dir)
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}
                     hucre = hucreGetir(taslar[i].x+(3-dir),taslar[i].y-dir)
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}
                     hucre = hucreGetir(taslar[i].x-dir,taslar[i].y+(3-dir))
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}
                     hucre = hucreGetir(taslar[i].x-dir,taslar[i].y-(3-dir))
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}}}
@@ -575,16 +575,16 @@ let isCheckmate = function(sah){
                         let hucre = hucreGetir(taslar[i].x+k,taslar[i].y);
                         if(taslar[i].hareketKurallari(hucre,2).gecerli){
                             hucre.tasAta(taslar[i]);
-                            if(!kingExposed(aktifOyuncu.sah)){
-                                aktifOyuncu=myPlayer;
+                            if(!sahCekme(aktifOyuncu.sah)){
+                                aktifOyuncu=aktifOyuncu;
                                 hucre.tasKaldir(taslar[i]);
                                 return false;}
                             hucre.tasKaldir(taslar[i]);}
                         hucre = hucreGetir(taslar[i].x,taslar[i].y+k);
                         if(taslar[i].hareketKurallari(hucre,2).gecerli){
                             hucre.tasAta(taslar[i]);
-                            if(!kingExposed(aktifOyuncu.sah)){
-                                aktifOyuncu=myPlayer;
+                            if(!sahCekme(aktifOyuncu.sah)){
+                                aktifOyuncu=aktifOyuncu;
                                 hucre.tasKaldir(taslar[i]);
                                 return false;}
                             hucre.tasKaldir(taslar[i]);}}}}
@@ -593,16 +593,16 @@ let isCheckmate = function(sah){
                     let hucre = hucreGetir(taslar[i].x+k,taslar[i].y+k);
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}
                     hucre = hucreGetir(taslar[i].x+k,taslar[i].y-k);
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}}}
@@ -611,16 +611,16 @@ let isCheckmate = function(sah){
                     let hucre = hucreGetir(taslar[i].x+k,taslar[i].y+k);
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}
                     hucre = hucreGetir(taslar[i].x+k,taslar[i].y-k);
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}}
@@ -628,78 +628,78 @@ let isCheckmate = function(sah){
                     let hucre = hucreGetir(taslar[i].x+k,taslar[i].y+k)
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}
                     hucre = hucreGetir(taslar[i].x+k,taslar[i].y-k)
                     if(hucre!=null&&taslar[i].hareketKurallari(hucre,2).gecerli){
                         hucre.tasAta(taslar[i]);
-                        if(!kingExposed(aktifOyuncu.sah)){
-                            aktifOyuncu=myPlayer;
+                        if(!sahCekme(aktifOyuncu.sah)){
+                            aktifOyuncu=aktifOyuncu;
                             hucre.tasKaldir(taslar[i]);
                             return false;}
                         hucre.tasKaldir(taslar[i]);}}}}}
     return true;}
 
-let showPromotion = function(oyuncu){
+let terfiEkrani = function(oyuncu){
 	document.getElementById("terfi_mesaji").className = "kaplama show";
 	document.getElementById("terfi_taslari").className = oyuncu.renk;}
 
-let closePromotion = function(){
+let terfiEkraniKapama = function(){
 	document.getElementById("terfi_mesaji").className = "kaplama";}
 
 let terfi = function(type){
-	let newPiece;
+	let yeniTas;
 	let oncekiTas = aktifOyuncu.terfi;
 	let index = taslar.indexOf(oncekiTas);
 	switch(type){
 		case "vezir":
-			newPiece = new Vezir(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
+			yeniTas = new Vezir(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;
 		case "kale":
-			newPiece = new Kale(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
+			yeniTas = new Kale(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;
 		case "fil":
-			newPiece = new Fil(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
+			yeniTas = new Fil(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;
 		case "at":
-			newPiece = new At(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
+			yeniTas = new At(oncekiTas.x, oncekiTas.y, oncekiTas.renk);
 			break;}
 	if(index != -1){
         hucreGetir(oncekiTas.x, oncekiTas.y).tasKaldir();
-		taslar[index] = newPiece;
-		hucreGetir(oncekiTas.x, oncekiTas.y).tasAta(newPiece);
+		taslar[index] = yeniTas;
+		hucreGetir(oncekiTas.x, oncekiTas.y).tasAta(yeniTas);
 		aktifOyuncu.terfi = null;
-		closePromotion();
+		terfiEkraniKapama();
 		if(aktifOyuncu==beyaz){
-            if(newPiece.hareketKurallari(hucreGetir(siyah.sah.x, siyah.sah.y),2).gecerli){
-                showError("Şah")
+            if(yeniTas.hareketKurallari(hucreGetir(siyah.sah.x, siyah.sah.y),2).gecerli){
+                hataMesaji("Şah")
                 siyah.sah_cekme=true;
-                beyaz.sah.tehtidEdenTas = newPiece;}
-            if(kingExposed(siyah.sah)){
-                showError("Şah")
+                beyaz.sah.tehtidEdenTas = yeniTas;}
+            if(sahCekme(siyah.sah)){
+                hataMesaji("Şah")
                 siyah.sah_cekme=true;
-                siyah.sah.tehtidEdenTas = newPiece;}}
+                siyah.sah.tehtidEdenTas = yeniTas;}}
         else{
-            if(newPiece.hareketKurallari(hucreGetir(beyaz.sah.x, beyaz.sah.y),2).gecerli){
-                showError("Şah")
+            if(yeniTas.hareketKurallari(hucreGetir(beyaz.sah.x, beyaz.sah.y),2).gecerli){
+                hataMesaji("Şah")
                 beyaz.sah_cekme=true;}
-            if(kingExposed(beyaz.sah)){
-                showError("Şah")
+            if(sahCekme(beyaz.sah)){
+                hataMesaji("Şah")
                 beyaz.sah_cekme=true;}}
-        nextTurn();}}
+        siraDegisimi();}}
 
-let kingExposed = function(at){
+let sahCekme = function(at){
     for(let i=0;i<taslar.length;i++){
         let hucre = hucreGetir(taslar[i].x, taslar[i].y);
         if(taslar[i].renk != at.renk && taslar[i].alinan_tas==false){
             if(taslar[i] instanceof Piyon){
-                let direction = taslar[i].renk == "beyaz" ? -1 : 1;
+                let yon = taslar[i].renk == "beyaz" ? -1 : 1;
                 let hareketY = (at.y-taslar[i].y);
                 let hareketX = (at.x-taslar[i].x);
-                if(hareketY == direction){
+                if(hareketY == yon){
                     if(Math.abs(hareketX) == 1){
                         at.tehtidEdenTas = taslar[i];
                         return true;}}}
@@ -709,7 +709,7 @@ let kingExposed = function(at){
                     return true;}}}}
     return false;}
 
-let nextTurn = function(){
+let siraDegisimi = function(){
     sira++;
 	if(aktifOyuncu.renk == "beyaz"){
 		aktifOyuncu = siyah;
@@ -718,8 +718,7 @@ let nextTurn = function(){
 		aktifOyuncu = beyaz;
         document.getElementById("turnInfo").innerHTML = "Hamle Sırası: <b>Beyaz</b>";}}
 
-//eklemeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee//
-function alinanTasinGosterimi(tas) {
+        function alinanTasinGosterimi(tas) {
     var capturedContainer = document.querySelector('.alinan_tas.' + tas.renk);
     var img = document.createElement('div');
     img.className = 'alinan_tas-tas';
@@ -739,8 +738,8 @@ function getBackgroundPosition(tas) {
         'kale': 4,   // Kalenin pozisyonu
         'piyon': 5    // Piyonun pozisyonu
     };
-    var x = (indexMap[tas.type] * -100) + '%'; // X pozisyonunu hesaplama, 6 sütun var
-    var y = tas.renk === 'beyaz' ? '0%' : '-100%'; // Y pozisyonunu hesaplama, 2 satır var
+    var x = (indexMap[tas.type] * -100) + '%';
+    var y = tas.renk === 'beyaz' ? '0%' : '-100%';
     return x+" "+y;}
 
 function yenidenBaslatma() {
